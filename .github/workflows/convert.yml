@@ -1,0 +1,70 @@
+name: Convert JSON to M3U
+
+on:
+  # 在推送到main分支时触发
+  push:
+    branches: [ main, master ]
+  
+  # 允许手动触发工作流
+  workflow_dispatch:
+  
+  # 可选：定时触发（例如每天凌晨2点）
+  schedule:
+    - cron: '0 2 * * *'
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # 1. 检出代码
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    # 2. 设置Python环境
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    # 3. 显示目录结构（用于调试）
+    - name: List files
+      run: |
+        echo "当前目录结构:"
+        ls -la
+        echo "JSON文件内容预览:"
+        head -50 getAllChannel.json || echo "无法读取JSON文件"
+        
+    # 4. 运行转换脚本
+    - name: Run conversion script
+      run: python json_to_m3u.py
+      
+    # 5. 显示生成的文件信息
+    - name: Show result
+      run: |
+        if [ -f "tv.m3u" ]; then
+          echo "✅ M3U文件生成成功"
+          echo "文件大小: $(wc -l < tv.m3u) 行"
+          echo "前10行内容:"
+          head -10 tv.m3u
+        else
+          echo "❌ M3U文件生成失败"
+          exit 1
+        fi
+        
+    # 6. 上传生成的M3U文件作为构件
+    - name: Upload M3U file
+      uses: actions/upload-artifact@v4
+      with:
+        name: tv-playlist
+        path: tv.m3u
+        retention-days: 7
+        
+    # 7. 可选：提交生成的M3U文件回仓库
+    - name: Commit and push if changed
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add tv.m3u
+        git diff --staged --quiet || git commit -m "Auto-generate M3U file [skip ci]"
+        git push
