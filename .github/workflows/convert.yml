@@ -1,7 +1,7 @@
 name: Convert JSON to M3U
 
 on:
-  # 在推送到main分支时触发
+  # 在推送到main或master分支时触发
   push:
     branches: [ main, master ]
   
@@ -30,22 +30,25 @@ jobs:
     # 3. 显示目录结构（用于调试）
     - name: List files
       run: |
-        echo "当前目录结构:"
+        echo "仓库目录结构:"
         ls -la
-        echo "JSON文件内容预览:"
-        head -50 getAllChannel.json || echo "无法读取JSON文件"
+        echo "m3u-generator目录内容:"
+        ls -la m3u-generator/
         
-    # 4. 运行转换脚本
+    # 4. 切换到专用目录并运行转换脚本
     - name: Run conversion script
+      working-directory: ./m3u-generator  # 关键：切换到专用目录
       run: python json_to_m3u.py
       
     # 5. 显示生成的文件信息
     - name: Show result
       run: |
+        echo "生成的文件检查:"
         if [ -f "tv.m3u" ]; then
           echo "✅ M3U文件生成成功"
-          echo "文件大小: $(wc -l < tv.m3u) 行"
-          echo "前10行内容:"
+          echo "文件行数: $(wc -l < tv.m3u) 行"
+          echo "文件大小: $(wc -c < tv.m3u) 字节"
+          echo "前10行内容预览:"
           head -10 tv.m3u
         else
           echo "❌ M3U文件生成失败"
