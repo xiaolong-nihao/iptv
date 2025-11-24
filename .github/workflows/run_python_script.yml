@@ -1,0 +1,39 @@
+name: Convert JSON to M3U # 工作流的名称
+
+on: 
+  push: # 当您向仓库推送代码时触发，可以根据需要调整触发条件，例如设置为在特定分支推送时触发
+    branches: [ main ]
+  workflow_dispatch: # 允许在GitHub网页界面手动触发此工作流
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # 使用最新的Ubuntu系统作为运行环境
+
+    steps:
+    # 步骤1：获取你的仓库代码
+    - uses: actions/checkout@v4
+
+    # 步骤2：设置Python环境
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11' # 指定Python版本，请确保它与你的脚本兼容
+
+    # 步骤3：（可选）安装依赖
+    # 如果你的脚本需要额外的Python库（如requests），可以在这里安装。
+    # 假设你的依赖是requests库，可以取消注释下一行。
+    # - name: Install dependencies
+    #   run: pip install requests
+
+    # 步骤4：执行你的Python脚本
+    - name: Run conversion script
+      run: python json_to_m3u.py
+
+    # 步骤5：（可选）上传生成的文件作为构件
+    # 此步骤会将生成的文件（如tv.m3u）打包，供你下载或用于后续步骤
+    - name: Upload M3U file as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: playlist-file
+        path: tv.m3u # 请确保此文件名与你的脚本生成的m3u文件名一致
+        retention-days: 5 # 构件保留天数
